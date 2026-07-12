@@ -119,10 +119,10 @@ export default function HomePage() {
 
               <button
                 onClick={handleGoogleSignIn}
-                disabled={busy}
+                disabled={busy || !auth}
                 className="inline-flex w-fit items-center justify-center rounded-full bg-beacon px-6 py-3 font-semibold text-asphalt transition hover:brightness-110 disabled:opacity-60"
               >
-                {busy ? 'Connecting…' : 'Continue with Google'}
+                {busy ? 'Connecting…' : auth ? 'Continue with Google' : 'Firebase not configured'}
               </button>
             </div>
           )}

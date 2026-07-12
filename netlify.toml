@@ -1,0 +1,11 @@
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[build.environment]
+  NEXT_PUBLIC_FIREBASE_API_KEY = "AIzaSyA1dWiP8p7ioisKWygBRK8ho-Y0cSK3wYU"
+  NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN = "bk12-4dc18.firebaseapp.com"
+  NEXT_PUBLIC_FIREBASE_PROJECT_ID = "bk12-4dc18"
+  NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET = "bk12-4dc18.firebasestorage.app"
+  NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID = "78404570249"
+  NEXT_PUBLIC_FIREBASE_APP_ID = "1:78404570249:web:66c7e019d81f5076c44a58"
