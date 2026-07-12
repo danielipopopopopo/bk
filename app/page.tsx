@@ -1,11 +1,12 @@
 'use client';
 
 import { GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut, type User } from 'firebase/auth';
-import { useEffect, useMemo, useState } from 'react';
+import { addDoc, collection, getFirestore, serverTimestamp } from 'firebase/firestore';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { SessionFlow } from '../components/SessionFlow';
 import { Beacon } from '../components/Beacon';
 import { useGeoWeather } from '../hooks/useGeoWeather';
-import { auth } from '../lib/firebase';
+import { app, auth } from '../lib/firebase';
 import { TelemetryProcessor } from '../lib/telemetryProcessor';
 
 export default function HomePage() {
@@ -41,7 +42,7 @@ export default function HomePage() {
     }
   }, [authReady, geoWeather.status, geoWeather.resolve]);
 
-  async function handleGoogleSignIn() {
+  const handleGoogleSignIn = useCallback(async () => {
     setBusy(true);
     setError(null);
 
@@ -58,9 +59,9 @@ export default function HomePage() {
     } finally {
       setBusy(false);
     }
-  }
+  }, []);
 
-  async function handleSignOut() {
+  const handleSignOut = useCallback(async () => {
     setBusy(true);
     setError(null);
 
@@ -75,7 +76,7 @@ export default function HomePage() {
     } finally {
       setBusy(false);
     }
-  }
+  }, []);
 
   function addLap() {
     const value = Number(lapInput);
@@ -89,7 +90,7 @@ export default function HomePage() {
     setError(null);
   }
 
-  function analyzeSession() {
+  async function analyzeSession() {
     if (!user) {
       setError('Sign in before analyzing a session.');
       return;
@@ -116,14 +117,35 @@ export default function HomePage() {
         return;
       }
 
+      // Save the session to Firestore
+      try {
+        const db = getFirestore(app);
+        await addDoc(collection(db, 'sessions'), {
+          userId: user.uid,
+          createdAt: serverTimestamp(),
+          trackCondition: geoWeather.condition,
+          rawLaps: rawLapTimesMs,
+          cleanLaps: result.processedValidLapTimesMs,
+          averageMs: result.sessionAverageMs,
+          medianMs: result.medianTimeMs,
+          rejectedLaps: result.rejectedLaps,
+          // TODO: Add trackId and kartId when that UI is built
+        });
+      } catch (firestoreError) {
+        console.error('Failed to save session:', firestoreError);
+        setError(
+          firestoreError instanceof Error ? firestoreError.message : 'Could not save session to database.'
+        );
+        // Don't block the user from seeing the result, even if save fails
+      }
+
       setSubmitted(true);
       setSessionSummary(
         `Condition: ${geoWeather.condition} · Clean laps: ${result.processedValidLapTimesMs.length} · Avg: ${Math.round(result.sessionAverageMs)} ms`
       );
       setError(null);
     } catch (err) {
-      setSubmitted(true);
-      setSessionSummary(null);
+      // This catch block handles errors from TelemetryProcessor
       setError(err instanceof Error ? err.message : 'Unable to analyze this session.');
     }
   }
@@ -137,7 +159,7 @@ export default function HomePage() {
   }
 
   return (
-    <main className="min-h-screen bg-asphalt px-6 py-10 text-ink">
+    <main className="min-h-screen bg-asphalt px-6 py-16 text-ink">
       <div className="mx-auto flex max-w-6xl flex-col gap-8">
         <header className="flex flex-col gap-3">
           <div className="flex items-center gap-3">
