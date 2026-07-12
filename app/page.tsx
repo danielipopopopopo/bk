@@ -6,7 +6,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { SessionFlow } from '../components/SessionFlow';
 import { Beacon } from '../components/Beacon';
 import { useGeoWeather } from '../hooks/useGeoWeather';
-import { app, auth } from '../lib/firebase';
+import { auth, app } from '../lib/firebase';
 import { TelemetryProcessor } from '../lib/telemetryProcessor';
 
 export default function HomePage() {
