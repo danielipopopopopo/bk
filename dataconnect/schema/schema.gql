@@ -1,0 +1,35 @@
+type User @table {
+  username: String!
+  email: String!
+  profilePhotoUrl: String
+  bio: String
+}
+
+type Track @table {
+  name: String!
+  location: String!
+  trackLengthMeters: Int
+  surfaceType: String
+}
+
+type Kart @table {
+  name: String!
+  owner: User!
+  model: String
+  engineType: String
+}
+
+type Session @table {
+  track: Track!
+  user: User!
+  date: Date!
+  weatherConditions: String
+  trackSurfaceNotes: String
+}
+
+type LapRecord @table {
+  session: Session!
+  lapTimeSeconds: Float!
+  sectorTimes: [Float]
+  isBestLap: Boolean
+}

@@ -1,0 +1,27 @@
+mutation SeedData @transaction {
+  user_insertMany(data: [
+    { id: "00000000-0000-0000-0000-000000000001", username: "racer_one", email: "racer1@example.com", bio: "Speed enthusiast" },
+    { id: "00000000-0000-0000-0000-000000000002", username: "drift_king", email: "drift@example.com", bio: "Master of curves" },
+    { id: "00000000-0000-0000-0000-000000000003", username: "track_pro", email: "pro@example.com", bio: "Professional kart racer" }
+  ])
+  track_insertMany(data: [
+    { id: "10000000-0000-0000-0000-000000000001", name: "Monaco Kart GP", location: "Monaco", trackLengthMeters: 1200, surfaceType: "Asphalt" },
+    { id: "10000000-0000-0000-0000-000000000002", name: "Silverstone Mini", location: "UK", trackLengthMeters: 950, surfaceType: "Asphalt" },
+    { id: "10000000-0000-0000-0000-000000000003", name: "Dusty Ridge", location: "USA", trackLengthMeters: 1500, surfaceType: "Dirt" }
+  ])
+  kart_insertMany(data: [
+    { id: "20000000-0000-0000-0000-000000000001", name: "Speedy Gonzales", owner: { id: "00000000-0000-0000-0000-000000000001" }, model: "X-200", engineType: "2-Stroke" },
+    { id: "20000000-0000-0000-0000-000000000002", name: "Thunder Bolt", owner: { id: "00000000-0000-0000-0000-000000000002" }, model: "V-Max", engineType: "4-Stroke" },
+    { id: "20000000-0000-0000-0000-000000000003", name: "Red Flash", owner: { id: "00000000-0000-0000-0000-000000000003" }, model: "R-Type", engineType: "Electric" }
+  ])
+  session_insertMany(data: [
+    { id: "30000000-0000-0000-0000-000000000001", track: { id: "10000000-0000-0000-0000-000000000001" }, user: { id: "00000000-0000-0000-0000-000000000001" }, date: "2023-10-01", weatherConditions: "Sunny" },
+    { id: "30000000-0000-0000-0000-000000000002", track: { id: "10000000-0000-0000-0000-000000000002" }, user: { id: "00000000-0000-0000-0000-000000000002" }, date: "2023-10-02", weatherConditions: "Rainy" },
+    { id: "30000000-0000-0000-0000-000000000003", track: { id: "10000000-0000-0000-0000-000000000003" }, user: { id: "00000000-0000-0000-0000-000000000003" }, date: "2023-10-03", weatherConditions: "Cloudy" }
+  ])
+  lapRecord_insertMany(data: [
+    { id: "40000000-0000-0000-0000-000000000001", session: { id: "30000000-0000-0000-0000-000000000001" }, lapTimeSeconds: 52.4, isBestLap: true },
+    { id: "40000000-0000-0000-0000-000000000002", session: { id: "30000000-0000-0000-0000-000000000002" }, lapTimeSeconds: 65.1, isBestLap: true },
+    { id: "40000000-0000-0000-0000-000000000003", session: { id: "30000000-0000-0000-0000-000000000003" }, lapTimeSeconds: 48.9, isBestLap: true }
+  ])
+}

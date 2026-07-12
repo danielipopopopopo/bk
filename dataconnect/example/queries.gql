@@ -1,0 +1,139 @@
+mutation CreateUser @auth(level: USER) {
+  user_insert(data: {
+    id_expr: "auth.uid",
+    username: "new_username",
+    email: "user@example.com"
+  })
+}
+
+mutation UpdateUser @auth(level: USER) {
+  user_update(key: {id_expr: "auth.uid"}, data: {bio: "Updated bio"})
+}
+
+mutation DeleteUser @auth(level: USER) {
+  user_delete(key: {id_expr: "auth.uid"})
+}
+
+query GetUser @auth(level: USER) {
+  user(id_expr: "auth.uid") {
+    username
+    email
+  }
+}
+
+query ListUsers @auth(level: PUBLIC, insecureReason: "Listing usernames for social features.") {
+  users {
+    username
+  }
+}
+
+mutation CreateTrack @auth(level: PUBLIC, insecureReason: "Allowing public track submission.") {
+  track_insert(data: {name: "Monza", location: "Italy"})
+}
+
+mutation UpdateTrack($id: UUID!, $data: Track_Data!) @auth(level: USER) {
+  track_update(id: $id, data: $data)
+}
+
+mutation DeleteTrack($id: UUID!) @auth(level: USER) {
+  track_delete(id: $id)
+}
+
+query GetTrack($id: UUID!) @auth(level: PUBLIC, insecureReason: "Publicly accessible track info.") {
+  track(id: $id) {
+    name
+    location
+  }
+}
+
+query ListTracks @auth(level: PUBLIC, insecureReason: "Publicly accessible tracks.") {
+  tracks {
+    name
+  }
+}
+
+mutation CreateKart($data: Kart_Data!) @auth(level: USER) {
+  kart_insert(data: {
+    name: $data.name,
+    ownerId_expr: "auth.uid",
+    model: $data.model
+  })
+}
+
+mutation UpdateKart($id: UUID!, $data: Kart_Data!) @auth(level: USER) {
+  kart_update(id: $id, data: $data)
+}
+
+mutation DeleteKart($id: UUID!) @auth(level: USER) {
+  kart_delete(id: $id)
+}
+
+query GetKart($id: UUID!) @auth(level: USER) {
+  kart(id: $id) {
+    name
+    model
+  }
+}
+
+query ListMyKarts @auth(level: USER) {
+  karts(where: {ownerId: {eq_expr: "auth.uid"}}) {
+    name
+    model
+  }
+}
+
+mutation CreateSession($data: Session_Data!) @auth(level: USER) {
+  session_insert(data: {
+    trackId: $data.trackId,
+    userId_expr: "auth.uid",
+    date: $data.date
+  })
+}
+
+mutation UpdateSession($id: UUID!, $data: Session_Data!) @auth(level: USER) {
+  session_update(id: $id, data: $data)
+}
+
+mutation DeleteSession($id: UUID!) @auth(level: USER) {
+  session_delete(id: $id)
+}
+
+query GetSession($id: UUID!) @auth(level: USER) {
+  session(id: $id) {
+    date
+    weatherConditions
+  }
+}
+
+query ListMySessions @auth(level: USER) {
+  sessions(where: {userId: {eq_expr: "auth.uid"}}) {
+    date
+    track { name }
+  }
+}
+
+mutation CreateLapRecord($data: LapRecord_Data!) @auth(level: USER) {
+  lapRecord_insert(data: $data)
+}
+
+mutation UpdateLapRecord($id: UUID!, $data: LapRecord_Data!) @auth(level: USER) {
+  lapRecord_update(id: $id, data: $data)
+}
+
+mutation DeleteLapRecord($id: UUID!) @auth(level: USER) {
+  lapRecord_delete(id: $id)
+}
+
+query GetLapRecord($id: UUID!) @auth(level: USER) {
+  lapRecord(id: $id) {
+    lapTimeSeconds
+    isBestLap
+  }
+}
+
+query ListSessionLapRecords($sessionId: UUID!) @auth(level: USER) {
+  lapRecords(where: {sessionId: {eq: $sessionId}}) {
+    lapTimeSeconds
+    sectorTimes
+  }
+}
