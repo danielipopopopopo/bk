@@ -12,6 +12,11 @@ export default function HomePage() {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
+    if (!auth) {
+      setLoading(false);
+      return;
+    }
+
     const unsubscribe = onAuthStateChanged(auth, (nextUser) => {
       setUser(nextUser);
       setLoading(false);
@@ -25,6 +30,10 @@ export default function HomePage() {
     setError(null);
 
     try {
+      if (!auth) {
+        throw new Error('Firebase authentication is not configured.');
+      }
+
       const provider = new GoogleAuthProvider();
       provider.addScope('email');
       await signInWithPopup(auth, provider);
@@ -40,6 +49,10 @@ export default function HomePage() {
     setError(null);
 
     try {
+      if (!auth) {
+        throw new Error('Firebase authentication is not configured.');
+      }
+
       await signOut(auth);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to sign out.');

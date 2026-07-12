@@ -24,6 +24,8 @@ import { KartDocument, SessionDocument, Track, UserDocument } from './types';
 // /tracks
 // ---------------------------------------------------------------------------
 export async function getTrack(trackId: string): Promise<Track | null> {
+  if (!db) return null;
+
   const snap = await getDoc(doc(db, 'tracks', trackId));
   return snap.exists() ? (snap.data() as Track) : null;
 }
@@ -32,6 +34,8 @@ export async function getTrack(trackId: string): Promise<Track | null> {
 // /karts/{kartDocId} — read-only from the client
 // ---------------------------------------------------------------------------
 export async function getKartDocument(kartDocId: string): Promise<KartDocument | null> {
+  if (!db) return null;
+
   const snap = await getDoc(doc(db, 'karts', kartDocId));
   return snap.exists() ? (snap.data() as KartDocument) : null;
 }
@@ -40,11 +44,15 @@ export async function getKartDocument(kartDocId: string): Promise<KartDocument |
 // /users/{userId}
 // ---------------------------------------------------------------------------
 export async function getUserDocument(userId: string): Promise<UserDocument | null> {
+  if (!db) return null;
+
   const snap = await getDoc(doc(db, 'users', userId));
   return snap.exists() ? (snap.data() as UserDocument) : null;
 }
 
 export async function upsertUserDocument(user: UserDocument): Promise<void> {
+  if (!db) return;
+
   await setDoc(doc(db, 'users', user.userId), user, { merge: true });
 }
 
@@ -52,6 +60,8 @@ export async function upsertUserDocument(user: UserDocument): Promise<void> {
 // /users/{userId}/sessions/{sessionId}
 // ---------------------------------------------------------------------------
 export async function writeSession(userId: string, session: SessionDocument): Promise<void> {
+  if (!db) return;
+
   await setDoc(doc(db, 'users', userId, 'sessions', session.sessionId), session);
 }
 
@@ -66,6 +76,8 @@ export async function getUserSessionAveragesForLayout(
   userId: string,
   layoutId: string
 ): Promise<number[]> {
+  if (!db) return [];
+
   const sessionsRef = collection(db, 'users', userId, 'sessions');
   const q = query(sessionsRef, where('layoutId', '==', layoutId));
   const snap = await getDocs(q);

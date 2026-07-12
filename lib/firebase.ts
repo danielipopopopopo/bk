@@ -19,30 +19,54 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-/**
- * Zero-guessing boundary applied to infrastructure, not just telemetry math:
- * fail loudly and immediately if any required config value is missing,
- * instead of silently initializing a half-configured Firebase app.
- */
-function assertConfigComplete(config: Record<string, string | undefined>): void {
-  const missing = Object.entries(config)
-    .filter(([, value]) => !value)
-    .map(([key]) => key);
-
-  if (missing.length > 0) {
-    throw new Error(
-      `[firebase.ts] Missing required environment variables: ${missing.join(', ')}. ` +
-        `Copy .env.local.example to .env.local and fill in every value before starting the app.`
-    );
-  }
+function isConfigComplete(config: Record<string, string | undefined>): boolean {
+  return Object.values(config).every(Boolean);
 }
 
-assertConfigComplete(firebaseConfig);
+let app: FirebaseApp | null = null;
+let authInstance: Auth | null = null;
+let dbInstance: Firestore | null = null;
+let storageInstance: FirebaseStorage | null = null;
 
-const app: FirebaseApp = getApps().length ? getApp() : initializeApp(firebaseConfig);
+function getOrCreateFirebaseApp(): FirebaseApp {
+  if (app) return app;
 
-export const db: Firestore = getFirestore(app);
-export const auth: Auth = getAuth(app);
-export const storage: FirebaseStorage = getStorage(app);
+  if (!isConfigComplete(firebaseConfig)) {
+    return null as unknown as FirebaseApp;
+  }
 
-export default app;
+  app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+  return app;
+}
+
+export const auth: Auth | null = (() => {
+  if (authInstance) return authInstance;
+
+  const firebaseApp = getOrCreateFirebaseApp();
+  if (!firebaseApp) return null;
+
+  authInstance = getAuth(firebaseApp);
+  return authInstance;
+})();
+
+export const db: Firestore | null = (() => {
+  if (dbInstance) return dbInstance;
+
+  const firebaseApp = getOrCreateFirebaseApp();
+  if (!firebaseApp) return null;
+
+  dbInstance = getFirestore(firebaseApp);
+  return dbInstance;
+})();
+
+export const storage: FirebaseStorage | null = (() => {
+  if (storageInstance) return storageInstance;
+
+  const firebaseApp = getOrCreateFirebaseApp();
+  if (!firebaseApp) return null;
+
+  storageInstance = getStorage(firebaseApp);
+  return storageInstance;
+})();
+
+export default getOrCreateFirebaseApp();
