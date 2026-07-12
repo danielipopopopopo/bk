@@ -1,7 +1,8 @@
 'use client';
 
 import { GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut, type User } from 'firebase/auth';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { SessionFlow } from '../components/SessionFlow';
 import { Beacon } from '../components/Beacon';
 import { auth } from '../lib/firebase';
 
@@ -10,6 +11,9 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [rawLapTimesMs, setRawLapTimesMs] = useState<number[]>([0]);
+  const [submitted, setSubmitted] = useState(false);
+  const [lapInput, setLapInput] = useState('');
 
   useEffect(() => {
     if (!auth) {
@@ -24,6 +28,8 @@ export default function HomePage() {
 
     return () => unsubscribe();
   }, []);
+
+  const authReady = useMemo(() => !loading && Boolean(auth), [loading]);
 
   async function handleGoogleSignIn() {
     setBusy(true);
@@ -61,21 +67,40 @@ export default function HomePage() {
     }
   }
 
+  function addLap() {
+    const value = Number(lapInput);
+    if (Number.isNaN(value) || value <= 0) {
+      setError('Enter a positive lap time in milliseconds.');
+      return;
+    }
+
+    setRawLapTimesMs((prev) => [...prev, value]);
+    setLapInput('');
+    setError(null);
+  }
+
+  function resetSession() {
+    setRawLapTimesMs([0]);
+    setSubmitted(false);
+    setLapInput('');
+    setError(null);
+  }
+
   return (
-    <main className="min-h-screen bg-asphalt px-6 py-16 text-ink">
-      <div className="mx-auto flex max-w-5xl flex-col gap-8">
+    <main className="min-h-screen bg-asphalt px-6 py-10 text-ink">
+      <div className="mx-auto flex max-w-6xl flex-col gap-8">
         <header className="flex flex-col gap-3">
           <div className="flex items-center gap-3">
-            <Beacon color="beacon" pulse label="Firebase connected" />
+            <Beacon color="beacon" pulse label="Telemetry app" />
             <p className="font-display text-sm uppercase tracking-[0.35em] text-inkFaint">
               Karting telemetry
             </p>
           </div>
           <h1 className="font-display text-4xl font-bold text-ink sm:text-5xl">
-            Sign in to start tracking your sessions.
+            Deterministic lap analysis for your next session.
           </h1>
-          <p className="max-w-2xl text-lg text-inkDim">
-            Google authentication is now wired to your Firebase project, so your telemetry activity can be tied to a real account.
+          <p className="max-w-3xl text-lg text-inkDim">
+            Sign in with Google, capture lap times, and let the app route your session through the geolocation, outlier rejection, and coach-intervention states defined for this project.
           </p>
         </header>
 
@@ -89,7 +114,7 @@ export default function HomePage() {
             <div className="flex flex-col gap-6">
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div>
-                  <p className="font-display text-2xl font-semibold text-ink">Welcome back</p>
+                  <p className="font-display text-2xl font-semibold text-ink">Signed in</p>
                   <p className="text-inkDim">{user.displayName ?? user.email}</p>
                 </div>
                 <button
@@ -101,30 +126,69 @@ export default function HomePage() {
                 </button>
               </div>
 
-              <div className="grid gap-4 md:grid-cols-2">
+              <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
                 <div className="rounded-2xl border border-hairline bg-asphalt p-5">
-                  <p className="font-display text-lg font-semibold text-ink">Telemetry dashboard</p>
-                  <p className="mt-2 text-sm text-inkDim">
-                    Your signed-in session is ready. You can now start capturing and reviewing lap data from the main app experience.
-                  </p>
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="font-display text-lg font-semibold text-ink">Session builder</p>
+                      <p className="mt-1 text-sm text-inkDim">Enter lap times in milliseconds and submit for analysis.</p>
+                    </div>
+                    <Beacon color="good" label="Ready" />
+                  </div>
+
+                  <div className="mt-4 flex flex-wrap gap-3">
+                    <input
+                      value={lapInput}
+                      onChange={(event) => setLapInput(event.target.value)}
+                      placeholder="e.g. 54200"
+                      className="min-w-[180px] rounded-full border border-hairline bg-panel px-4 py-2.5 text-sm text-ink placeholder:text-inkFaint"
+                    />
+                    <button
+                      onClick={addLap}
+                      className="rounded-full bg-beacon px-4 py-2.5 text-sm font-semibold text-asphalt"
+                    >
+                      Add lap
+                    </button>
+                    <button
+                      onClick={() => setSubmitted(true)}
+                      className="rounded-full border border-hairline px-4 py-2.5 text-sm font-semibold text-ink"
+                    >
+                      Analyze session
+                    </button>
+                    <button
+                      onClick={resetSession}
+                      className="rounded-full border border-hairline px-4 py-2.5 text-sm font-semibold text-ink"
+                    >
+                      Reset
+                    </button>
+                  </div>
+
+                  <div className="mt-4 rounded-2xl border border-hairline bg-panelRaised p-4">
+                    <p className="text-xs uppercase tracking-[0.25em] text-inkFaint">Current laps</p>
+                    <p className="mt-2 font-mono text-sm text-ink">
+                      {rawLapTimesMs.join(', ')}
+                    </p>
+                  </div>
                 </div>
 
                 <div className="rounded-2xl border border-hairline bg-asphalt p-5">
-                  <p className="font-display text-lg font-semibold text-ink">Session status</p>
-                  <div className="mt-3 flex items-center gap-2">
-                    <Beacon color="good" label="Active" />
-                    <span className="text-sm text-inkDim">Ready for your next run</span>
-                  </div>
+                  <p className="font-display text-lg font-semibold text-ink">App workflow</p>
+                  <ul className="mt-3 list-disc space-y-2 pl-5 text-sm text-inkDim">
+                    <li>Geolocation resolves track condition automatically.</li>
+                    <li>If location fails, you choose COLD / OPTIMAL / HOT manually.</li>
+                    <li>Outlier rejection and coach intervention states appear when relevant.</li>
+                  </ul>
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-hairline bg-panelRaised p-5">
-                <p className="font-display text-lg font-semibold text-ink">Next steps</p>
-                <ul className="mt-3 list-disc space-y-2 pl-5 text-sm text-inkDim">
-                  <li>Connect your telemetry input and start capturing laps.</li>
-                  <li>Save your session history to your authenticated account.</li>
-                  <li>Use the dashboard to review performance trends over time.</li>
-                </ul>
+              <div className="rounded-2xl border border-hairline bg-panelRaised p-4">
+                <SessionFlow
+                  rawLapTimesMs={rawLapTimesMs}
+                  submitted={submitted}
+                  authReady={authReady}
+                  layoutImageUrl="https://images.unsplash.com/photo-1517649763962-0c623066013b?auto=format&fit=crop&w=1200&q=80"
+                  wallsCoordinates={[]}
+                />
               </div>
             </div>
           ) : (
@@ -132,7 +196,7 @@ export default function HomePage() {
               <div className="rounded-2xl border border-hairline bg-asphalt p-5">
                 <p className="font-display text-lg font-semibold text-ink">Use your Google account</p>
                 <p className="mt-2 text-sm text-inkDim">
-                  Sign in once and your sessions can be tied to a persistent user profile.
+                  Sign in once and your sessions will be connected to a persistent account.
                 </p>
               </div>
 
@@ -146,9 +210,7 @@ export default function HomePage() {
             </div>
           )}
 
-          {error ? (
-            <p className="mt-4 text-sm text-[#ff8a3d]">{error}</p>
-          ) : null}
+          {error ? <p className="mt-4 text-sm text-[#ff8a3d]">{error}</p> : null}
         </section>
       </div>
     </main>
