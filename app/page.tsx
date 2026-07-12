@@ -101,11 +101,30 @@ export default function HomePage() {
                 </button>
               </div>
 
-              <div className="rounded-2xl border border-hairline bg-asphalt p-5">
-                <p className="font-display text-lg font-semibold text-ink">Firebase auth is active</p>
-                <p className="mt-2 text-sm text-inkDim">
-                  Your app is now connected to Firebase Authentication and ready to protect session data with a real Google-backed identity.
-                </p>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="rounded-2xl border border-hairline bg-asphalt p-5">
+                  <p className="font-display text-lg font-semibold text-ink">Telemetry dashboard</p>
+                  <p className="mt-2 text-sm text-inkDim">
+                    Your signed-in session is ready. You can now start capturing and reviewing lap data from the main app experience.
+                  </p>
+                </div>
+
+                <div className="rounded-2xl border border-hairline bg-asphalt p-5">
+                  <p className="font-display text-lg font-semibold text-ink">Session status</p>
+                  <div className="mt-3 flex items-center gap-2">
+                    <Beacon color="good" label="Active" />
+                    <span className="text-sm text-inkDim">Ready for your next run</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-hairline bg-panelRaised p-5">
+                <p className="font-display text-lg font-semibold text-ink">Next steps</p>
+                <ul className="mt-3 list-disc space-y-2 pl-5 text-sm text-inkDim">
+                  <li>Connect your telemetry input and start capturing laps.</li>
+                  <li>Save your session history to your authenticated account.</li>
+                  <li>Use the dashboard to review performance trends over time.</li>
+                </ul>
               </div>
             </div>
           ) : (
