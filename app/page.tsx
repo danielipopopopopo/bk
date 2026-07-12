@@ -4,7 +4,9 @@ import { GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut, type 
 import { useEffect, useMemo, useState } from 'react';
 import { SessionFlow } from '../components/SessionFlow';
 import { Beacon } from '../components/Beacon';
+import { useGeoWeather } from '../hooks/useGeoWeather';
 import { auth } from '../lib/firebase';
+import { TelemetryProcessor } from '../lib/telemetryProcessor';
 
 export default function HomePage() {
   const [user, setUser] = useState<User | null>(null);
@@ -14,6 +16,8 @@ export default function HomePage() {
   const [rawLapTimesMs, setRawLapTimesMs] = useState<number[]>([0]);
   const [submitted, setSubmitted] = useState(false);
   const [lapInput, setLapInput] = useState('');
+  const [sessionSummary, setSessionSummary] = useState<string | null>(null);
+  const geoWeather = useGeoWeather();
 
   useEffect(() => {
     if (!auth) {
@@ -30,6 +34,12 @@ export default function HomePage() {
   }, []);
 
   const authReady = useMemo(() => !loading && Boolean(auth), [loading]);
+
+  useEffect(() => {
+    if (authReady && geoWeather.status === 'IDLE') {
+      geoWeather.resolve();
+    }
+  }, [authReady, geoWeather.status, geoWeather.resolve]);
 
   async function handleGoogleSignIn() {
     setBusy(true);
@@ -79,10 +89,50 @@ export default function HomePage() {
     setError(null);
   }
 
+  function analyzeSession() {
+    if (!user) {
+      setError('Sign in before analyzing a session.');
+      return;
+    }
+
+    if (!geoWeather.condition) {
+      setError('Complete the weather step first so the session can be tagged with a deterministic track condition.');
+      return;
+    }
+
+    if (rawLapTimesMs.length < 3) {
+      setSubmitted(true);
+      setSessionSummary(null);
+      setError('At least three recorded laps are required to run the rejection pipeline.');
+      return;
+    }
+
+    try {
+      const result = TelemetryProcessor.rejectOutliers(rawLapTimesMs);
+      if (result === null) {
+        setSubmitted(true);
+        setSessionSummary(null);
+        setError('Not enough clean laps survived the rejection pipeline.');
+        return;
+      }
+
+      setSubmitted(true);
+      setSessionSummary(
+        `Condition: ${geoWeather.condition} · Clean laps: ${result.processedValidLapTimesMs.length} · Avg: ${Math.round(result.sessionAverageMs)} ms`
+      );
+      setError(null);
+    } catch (err) {
+      setSubmitted(true);
+      setSessionSummary(null);
+      setError(err instanceof Error ? err.message : 'Unable to analyze this session.');
+    }
+  }
+
   function resetSession() {
     setRawLapTimesMs([0]);
     setSubmitted(false);
     setLapInput('');
+    setSessionSummary(null);
     setError(null);
   }
 
@@ -150,7 +200,7 @@ export default function HomePage() {
                       Add lap
                     </button>
                     <button
-                      onClick={() => setSubmitted(true)}
+                      onClick={analyzeSession}
                       className="rounded-full border border-hairline px-4 py-2.5 text-sm font-semibold text-ink"
                     >
                       Analyze session
@@ -168,6 +218,9 @@ export default function HomePage() {
                     <p className="mt-2 font-mono text-sm text-ink">
                       {rawLapTimesMs.join(', ')}
                     </p>
+                    {sessionSummary ? (
+                      <p className="mt-3 text-sm text-inkDim">{sessionSummary}</p>
+                    ) : null}
                   </div>
                 </div>
 
